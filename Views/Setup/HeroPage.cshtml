@@ -1,0 +1,49 @@
+@model PiranhaDemo.Models.HeroPage
+
+@{
+    Layout = "_Layout";
+}
+
+<section class="hero">
+    @if (Model.Hero?.HeroImage?.Media != null)
+    {
+        <img src="@Url.Content(Model.Hero.HeroImage.Media.PublicUrl)" alt="Hero Image" class="hero-image" />
+    }
+
+    <div class="hero-content">
+        @if (!string.IsNullOrWhiteSpace(Model.Hero?.HeroTitle?.Value))
+        {
+            <h1>@Model.Hero.HeroTitle.Value</h1>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Hero?.HeroBody?.Value))
+        {
+            <div class="hero-body">
+                @Html.Raw(Model.Hero.HeroBody.Value)
+            </div>
+        }
+    </div>
+</section>
+
+<style>
+    .hero {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    .hero-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+    .hero-content {
+        margin-top: 20px;
+    }
+    .hero-content h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    .hero-body {
+        font-size: 1.2rem;
+        color: #444;
+    }
+</style>
