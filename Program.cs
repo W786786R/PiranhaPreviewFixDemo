@@ -60,6 +60,77 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Custom Preview Endpoint
+
+
+/*app.Map("/manager/page/preview", async context =>
+{
+    var pageId = context.Request.Query["id"];
+    var draft = context.Request.Query.ContainsKey("draft");
+
+    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
+    if (Guid.TryParse(pageId, out var id))
+    {
+        var page = await pageService.GetByIdAsync(id);
+        if (page != null)
+        {
+            var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
+            context.Response.Redirect(url);
+            return;
+        }
+    }
+
+    context.Response.StatusCode = 404;
+});*/
+
+/*app.Map("/manager/page/preview/{id:guid}", async context =>
+{
+    var idStr = context.Request.RouteValues["id"]?.ToString();
+    var draft = context.Request.Query.ContainsKey("draft");
+
+    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
+    if (Guid.TryParse(idStr, out var id))
+    {
+        var page = await pageService.GetByIdAsync(id);
+        if (page != null)
+        {
+            var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
+            context.Response.Redirect(url);
+            return;
+        }
+    }
+
+    context.Response.StatusCode = 404;
+});*/
+
+
+// 2. Custom preview middleware
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Query.ContainsKey("draft"))
+    {
+        var siteService = context.RequestServices.GetRequiredService<Piranha.Services.ISiteService>();
+        var sites = await siteService.GetAllAsync();
+        
+
+
+        var path = context.Request.Path.Value?.Trim('/');
+        foreach (var site in sites)
+        {
+            if (!string.IsNullOrEmpty(site.InternalId) &&
+                path?.StartsWith(site.InternalId) == true)
+            {
+                context.Request.Path = $"/{site.InternalId}/{path}";
+                break;
+            }
+        }
+    }
+
+    await next();
+});
+
+
 
 
 app.UsePiranha(options =>
