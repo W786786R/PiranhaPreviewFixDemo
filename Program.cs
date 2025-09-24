@@ -6,6 +6,7 @@ using Piranha.Data.EF.SQLite;
 using Piranha.Manager.Editor;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Add antiforgery service
 builder.Services.AddAntiforgery(options =>
 {
@@ -13,8 +14,8 @@ builder.Services.AddAntiforgery(options =>
 });
 
 // Explicitly registering services
-builder.Services.AddScoped<Piranha.Services.ISiteService, Piranha.Services.SiteService>();
-builder.Services.AddScoped<Piranha.Services.IPageService, Piranha.Services.PageService>();
+//builder.Services.AddScoped<Piranha.Services.ISiteService, Piranha.Services.SiteService>();
+//builder.Services.AddScoped<Piranha.Services.IPageService, Piranha.Services.PageService>();
 
 
 builder.AddPiranha(options =>
@@ -35,6 +36,7 @@ builder.AddPiranha(options =>
     options.UseIdentityWithSeed<IdentitySQLiteDb>(db => db.UseSqlite(connectionString));
 });
 
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -46,16 +48,13 @@ if (app.Environment.IsDevelopment())
 
 app.UsePiranha(options =>
 {
-    // Initialize Piranha
     App.Init(options.Api);
 
-    // Build content types
     new ContentTypeBuilder(options.Api)
         .AddAssembly(typeof(Program).Assembly)
         .Build()
         .DeleteOrphans();
 
-    // Configure Tiny MCE
     EditorConfig.FromFile("editorconfig.json");
 
     options.UseManager();
@@ -64,14 +63,17 @@ app.UsePiranha(options =>
 });
 
 
+// 2. Custom preview middleware
 
-// 2. Middleware for handling `?draft=true` and multi-site preview paths
 app.Use(async (context, next) =>
 {
     if (context.Request.Query.ContainsKey("draft"))
     {
-        var siteService = context.RequestServices.GetRequiredService<Piranha.Services.ISiteService>();
-        var sites = await siteService.GetAllAsync();
+        //var siteService = context.RequestServices.GetRequiredService<Piranha.Services.ISiteService>();
+        //var sites = await siteService.GetAllAsync();
+        var api = context.RequestServices.GetRequiredService<IApi>();
+        var sites = await api.Sites.GetAllAsync();
+
 
         var path = context.Request.Path.Value?.Trim('/');
         foreach (var site in sites)
@@ -88,49 +90,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Custom Preview Endpoint
-
-
-/*app.Map("/manager/page/preview", async context =>
-{
-    var pageId = context.Request.Query["id"];
-    var draft = context.Request.Query.ContainsKey("draft");
-
-    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
-    if (Guid.TryParse(pageId, out var id))
-    {
-        var page = await pageService.GetByIdAsync(id);
-        if (page != null)
-        {
-            var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
-            context.Response.Redirect(url);
-            return;
-        }
-    }
-
-    context.Response.StatusCode = 404;
-});*/
-
-/*app.Map("/manager/page/preview/{id:guid}", async context =>
-{
-    var idStr = context.Request.RouteValues["id"]?.ToString();
-    var draft = context.Request.Query.ContainsKey("draft");
-
-    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
-    if (Guid.TryParse(idStr, out var id))
-    {
-        var page = await pageService.GetByIdAsync(id);
-        if (page != null)
-        {
-            var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
-            context.Response.Redirect(url);
-            return;
-        }
-    }
-
-    context.Response.StatusCode = 404;
-});*/
-
 
 // 3. Custom preview endpoint
 
@@ -139,12 +98,12 @@ app.Map("/manager/page/preview", async context =>
     var pageId = context.Request.Query["id"];
     var draft = context.Request.Query.ContainsKey("draft");
 
-    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
-    
+    //var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
+    var api = context.RequestServices.GetRequiredService<IApi>();
     if (Guid.TryParse(pageId, out var id))
     {
-        var page = await pageService.GetByIdAsync(id);
-        
+        //var page = await pageService.GetByIdAsync(id);
+        var page = await api.Pages.GetByIdAsync(id);
         if (page != null)
         {
             var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
