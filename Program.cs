@@ -12,6 +12,11 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "XSRF-TOKEN"; // what Piranha preview JS expects
 });
 
+// Explicitly registering services
+builder.Services.AddScoped<Piranha.Services.ISiteService, Piranha.Services.SiteService>();
+builder.Services.AddScoped<Piranha.Services.IPageService, Piranha.Services.PageService>();
+
+
 builder.AddPiranha(options =>
 {
     // Hot reload of .cshtml during development
