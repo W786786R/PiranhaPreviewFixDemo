@@ -37,7 +37,30 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-// Middleware for handling `?draft=true` and multi-site preview paths
+// 1. Initializing Piranha first
+
+app.UsePiranha(options =>
+{
+    // Initialize Piranha
+    App.Init(options.Api);
+
+    // Build content types
+    new ContentTypeBuilder(options.Api)
+        .AddAssembly(typeof(Program).Assembly)
+        .Build()
+        .DeleteOrphans();
+
+    // Configure Tiny MCE
+    EditorConfig.FromFile("editorconfig.json");
+
+    options.UseManager();
+    options.UseTinyMCE();
+    options.UseIdentity();
+});
+
+
+
+// 2. Middleware for handling `?draft=true` and multi-site preview paths
 app.Use(async (context, next) =>
 {
     if (context.Request.Query.ContainsKey("draft"))
@@ -126,31 +149,6 @@ app.Map("/manager/page/preview", async context =>
     }
 
     context.Response.StatusCode = 404;
-});
-
-
-
-
-
-
-
-app.UsePiranha(options =>
-{
-    // Initialize Piranha
-    App.Init(options.Api);
-
-    // Build content types
-    new ContentTypeBuilder(options.Api)
-        .AddAssembly(typeof(Program).Assembly)
-        .Build()
-        .DeleteOrphans();
-
-    // Configure Tiny MCE
-    EditorConfig.FromFile("editorconfig.json");
-
-    options.UseManager();
-    options.UseTinyMCE();
-    options.UseIdentity();
 });
 
 app.Run();
