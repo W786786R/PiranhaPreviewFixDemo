@@ -37,6 +37,30 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+// Middleware for handling `?draft=true` and multi-site preview paths
+app.Use(async (context, next) =>
+{
+    if (context.Request.Query.ContainsKey("draft"))
+    {
+        var siteService = context.RequestServices.GetRequiredService<Piranha.Services.ISiteService>();
+        var sites = await siteService.GetAllAsync();
+
+        var path = context.Request.Path.Value?.Trim('/');
+        foreach (var site in sites)
+        {
+            if (!string.IsNullOrEmpty(site.InternalId) &&
+                path?.StartsWith(site.InternalId) == true)
+            {
+                context.Request.Path = $"/{site.InternalId}/{path}";
+                break;
+            }
+        }
+    }
+
+    await next();
+});
+
+
 
 app.UsePiranha(options =>
 {
