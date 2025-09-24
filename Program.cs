@@ -104,31 +104,32 @@ app.Use(async (context, next) =>
 });*/
 
 
-// 2. Custom preview middleware
+// 3. Custom preview endpoint
 
-app.Use(async (context, next) =>
+app.Map("/manager/page/preview", async context =>
 {
-    if (context.Request.Query.ContainsKey("draft"))
+    var pageId = context.Request.Query["id"];
+    var draft = context.Request.Query.ContainsKey("draft");
+
+    var pageService = context.RequestServices.GetRequiredService<Piranha.Services.IPageService>();
+    
+    if (Guid.TryParse(pageId, out var id))
     {
-        var siteService = context.RequestServices.GetRequiredService<Piranha.Services.ISiteService>();
-        var sites = await siteService.GetAllAsync();
+        var page = await pageService.GetByIdAsync(id);
         
-
-
-        var path = context.Request.Path.Value?.Trim('/');
-        foreach (var site in sites)
+        if (page != null)
         {
-            if (!string.IsNullOrEmpty(site.InternalId) &&
-                path?.StartsWith(site.InternalId) == true)
-            {
-                context.Request.Path = $"/{site.InternalId}/{path}";
-                break;
-            }
+            var url = draft ? $"{page.Permalink}?draft=true" : page.Permalink;
+            context.Response.Redirect(url);
+            return;
         }
     }
 
-    await next();
+    context.Response.StatusCode = 404;
 });
+
+
+
 
 
 
